@@ -1,4 +1,4 @@
-# ScoreChange - 通用积分互兑规则中心
+# PointChange - 通用积分互兑规则中心
 
 这是一个基于 Python 标准库实现的积分互兑规则中心 MVP Demo。
 
