@@ -4,20 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>通用积分互兑平台 (MVP Demo)</title>
+    <!-- 使用更稳定的 CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
+    <style>
+        [v-cloak] { display: none; }
+        .error-banner {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #b91c1c;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 0.5rem;
+            display: none; /* 默认隐藏，JS 报错时显示 */
+        }
+    </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <div id="app" class="container mx-auto px-4 py-8 max-w-3xl">
+    <div id="global-error" class="error-banner">
+        <h3 class="font-bold">页面运行出错</h3>
+        <p id="error-message"></p>
+        <p class="text-sm mt-2 text-gray-600">如果是网络问题，请尝试刷新页面。如果是 GitHub Pages，请注意本页面目前运行在纯前端 Mock 模式。</p>
+    </div>
+
+    <div id="app" class="container mx-auto px-4 py-8 max-w-3xl" v-cloak>
         <header class="mb-8 text-center">
             <h1 class="text-3xl font-bold text-gray-800">积分互兑规则中心</h1>
             <p class="text-gray-500 mt-2">统一汇率配置 · 精准试算引擎 · 安全交易保障</p>
+            <div v-if="isMockMode" class="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded mt-2 border border-yellow-200">
+                ⚠️ 当前为纯前端演示模式 (API 未连接)
+            </div>
         </header>
 
         <!-- Rule Selection -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 class="text-xl font-semibold mb-4 border-b pb-2">1. 选择兑换规则</h2>
-            <div v-if="loading" class="text-center text-gray-500">加载规则中...</div>
+            <div v-if="loading" class="text-center text-gray-500 py-4">
+                <div class="animate-pulse flex justify-center items-center">
+                    <div class="h-2 w-2 bg-gray-400 rounded-full mx-1"></div>
+                    <div class="h-2 w-2 bg-gray-400 rounded-full mx-1"></div>
+                    <div class="h-2 w-2 bg-gray-400 rounded-full mx-1"></div>
+                </div>
+                <div class="mt-2">加载规则中...</div>
+            </div>
+            <div v-else-if="rules.length === 0" class="text-center text-gray-500 py-4">
+                暂无可用规则
+            </div>
             <div v-else class="grid gap-4">
                 <div v-for="rule in rules" :key="rule.rule_id" 
                      @click="selectRule(rule)"
@@ -60,7 +92,7 @@
 
                 <!-- Result Display -->
                 <div v-if="result" class="bg-gray-50 rounded-lg p-4 border border-gray-200 mt-4">
-                    <h3 class="font-semibold text-gray-800 mb-2">试算结果 (Token: {{ result.calc_token.substring(0,8)... }})</h3>
+                    <h3 class="font-semibold text-gray-800 mb-2">试算结果 (Token: {{ result.calc_token ? result.calc_token.substring(0,8) + '...' : 'MOCK' }})</h3>
                     <div class="grid grid-cols-3 gap-4 text-center">
                         <div class="p-3 bg-white rounded shadow-sm">
                             <div class="text-xs text-gray-500">实际扣除 ({{ selectedRule.source_asset }})</div>
@@ -103,7 +135,25 @@
     </div>
 
     <script>
+        // 全局错误捕获，防止白屏
+        window.onerror = function(message, source, lineno, colno, error) {
+            const errorDiv = document.getElementById('global-error');
+            const errorMsg = document.getElementById('error-message');
+            if (errorDiv && errorMsg) {
+                errorDiv.style.display = 'block';
+                errorMsg.textContent = `${message} (Line: ${lineno})`;
+            }
+            console.error('Global Error:', error);
+        };
+
         const { createApp } = Vue
+
+        // Mock Data for Fallback
+        const MOCK_RULES = [
+            { "rule_id": "RULE_001", "source_asset": "MALL_POINT", "target_asset": "VIP_GROWTH", "exchange_rate": 0.1, "step_size": 10, "min_amount": 10, "daily_limit": 1000, "status": "ENABLE", "description": "10商城积分兑换1成长值 (Mock)" },
+            { "rule_id": "RULE_002", "source_asset": "GAME_COIN", "target_asset": "COUPON", "exchange_rate": 0.05, "step_size": 100, "min_amount": 100, "daily_limit": 5000, "status": "ENABLE", "description": "100游戏币兑换5元优惠券 (Mock)" },
+            { "rule_id": "RULE_003", "source_asset": "MALL_POINT", "target_asset": "GAME_COIN", "exchange_rate": 1.0, "step_size": 1, "min_amount": 1, "daily_limit": 10000, "status": "ENABLE", "description": "1商城积分兑换1游戏币 (Mock)" }
+        ];
 
         createApp({
             data() {
@@ -114,7 +164,8 @@
                     inputAmount: null,
                     result: null,
                     error: null,
-                    logs: []
+                    logs: [],
+                    isMockMode: false
                 }
             },
             computed: {
@@ -129,12 +180,17 @@
                 async fetchRules() {
                     try {
                         const res = await fetch('/api/v1/rules/query')
+                        if (!res.ok) throw new Error("API failed")
                         const data = await res.json()
                         this.rules = data.rules
                         this.loading = false
+                        this.isMockMode = false
                     } catch (e) {
-                        this.error = "无法连接到服务器，请确保 server.py 正在运行"
+                        console.warn("Backend API not reachable, switching to Mock mode.", e)
+                        this.rules = MOCK_RULES
+                        this.isMockMode = true
                         this.loading = false
+                        this.addLog('info', '系统提示: 无法连接后端 API，已切换至前端 Mock 模式')
                     }
                 },
                 selectRule(rule) {
@@ -147,6 +203,12 @@
                     this.error = null
                     this.result = null
                     
+                    if (this.isMockMode) {
+                        // Frontend calculation logic (Duplicate of backend logic for demo)
+                        this.mockCalculate()
+                        return
+                    }
+
                     try {
                         const res = await fetch('/api/v1/rules/calculate', {
                             method: 'POST',
@@ -165,8 +227,37 @@
                             this.error = data.error
                         }
                     } catch (e) {
-                        this.error = "请求失败"
+                        this.error = "请求失败，请检查网络"
+                        // Fallback to mock calc if API fails midway
+                        this.isMockMode = true
+                        this.mockCalculate()
                     }
+                },
+                mockCalculate() {
+                    // 模拟后端计算逻辑，确保 Mock 模式下也能演示
+                    const rule = this.selectedRule
+                    const amount = this.inputAmount
+                    
+                    if (amount < rule.min_amount) {
+                        this.error = `数量 ${amount} 低于最小起兑值 ${rule.min_amount}`
+                        return
+                    }
+
+                    const step_size = rule.step_size
+                    const exchange_rate = rule.exchange_rate
+                    
+                    const valid_input = Math.floor(amount / step_size) * step_size
+                    const target_amount = parseFloat((valid_input * exchange_rate).toFixed(2))
+                    const source_deduct_amount = valid_input
+                    const remain_amount = amount - valid_input
+                    
+                    this.result = {
+                        source_deduct_amount,
+                        target_grant_amount: target_amount,
+                        remain_amount,
+                        calc_token: "mock-token-" + Date.now()
+                    }
+                    this.addLog('info', `(Mock) 试算完成: 输入 ${amount}, 建议扣除 ${source_deduct_amount}`)
                 },
                 simulateTransaction() {
                     if (!this.result) return
