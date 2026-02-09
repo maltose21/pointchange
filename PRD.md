@@ -1,109 +1,56 @@
-# 通用积分互兑规则中心 PRD (MVP v1.0)
+# PointChange - 通用积分互兑规则管理平台 PRD (v2.0)
 
-**版本**：v1.0  
-**状态**：待评审  
-**主要维护人**：Trae (Product Architect)
+**版本**：v2.0 (管理后台版)  
+**状态**：开发中  
+**目标**：提供给运营人员使用的规则配置管理后台，实现积分互兑规则的增删改查。
 
-## 1. 产品概述 (Overview)
-本平台致力于解决多业务线积分资产不互通的问题，通过提供统一的**规则配置**与**汇率试算**服务，赋能业务方快速搭建积分互兑场景。MVP 阶段聚焦于规则的查询与计算，不直接持有资金，不直接操作扣款。
+## 1. 页面布局与风格
+参考经典的中后台管理系统设计：
+- **侧边栏 (Sidebar)**：深色背景，左侧固定。
+    - 菜单项：`系统管理` > `规则配置` (当前激活)。
+- **顶栏 (Header)**：面包屑导航 (`系统管理 / 规则配置`)。
+- **内容区 (Content)**：白色卡片式布局。
 
-## 2. 核心业务流程图 (Core Flow)
+## 2. 核心功能需求
 
-```mermaid
-sequenceDiagram
-    participant User as 用户
-    participant Client as 业务方系统(交易发起方)
-    participant Rule as 规则中心(本平台)
-    participant Source as 源积分系统
-    participant Target as 目标积分系统
+### 2.1 规则列表页 (List View)
+- **筛选区域**：
+    - `源资产类型` (下拉框)
+    - `目标资产类型` (下拉框)
+    - `状态` (启用/禁用)
+    - [查询] [重置] 按钮
+- **操作栏**：
+    - [新增规则] 按钮 (蓝色高亮)
+- **数据表格**：
+    | 序号 | 规则ID | 规则名称 | 源资产 | 目标资产 | 汇率 | 步长 | 状态 | 修改人 | 修改时间 | 操作 |
+    | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+    | 1 | R001 | 积分兑换成长值 | MALL_POINT | VIP_GROWTH | 0.1 | 10 | 启用 | admin | 2026-02-09 | [编辑] [删除] |
+- **分页器**：底部分页 (每页10/20/50条)。
 
-    User->>Client: 1. 进入兑换页
-    Client->>Rule: 2. 查询可用规则 (query_rules)
-    Rule-->>Client: 返回规则列表(含汇率/限额/文案)
-    
-    User->>Client: 3. 输入兑换数量(如: 15个A积分)
-    Client->>Rule: 4. 发起试算 (calculate)
-    Note right of Rule: 核心逻辑：<br/>1. 校验限额/人群/时间<br/>2. 执行精度策略(整取反算)<br/>3. 生成计算凭证(TraceID)
-    Rule-->>Client: 返回结果: {需扣A:10, 实得B:1}
-    
-    Client->>User: 5. 展示确认页: "使用10A兑换1B"
-    User->>Client: 6. 确认兑换
-    
-    rect rgb(240, 248, 255)
-    Note over Client, Target: 7. 交易执行阶段 (业务方自控)
-    Client->>Source: 扣除 10 A
-    alt 扣除成功
-        Client->>Target: 增加 1 B
-        alt 增加失败
-            Client->>Source: [回滚] 退还 10 A
-            Client-->>User: 兑换失败，积分已退回
-        else 增加成功
-            Client-->>User: 兑换成功
-        end
-    else 扣除失败
-        Client-->>User: 余额不足或系统繁忙
-    end
-    end
-```
+### 2.2 新增/编辑规则 (Create/Edit Modal)
+点击新增或编辑时弹出对话框：
+- **规则名称**：输入框 (必填)
+- **源资产类型**：下拉选择 (MALL_POINT, GAME_COIN, etc.)
+- **目标资产类型**：下拉选择
+- **兑换汇率**：数字输入 (如 0.1 表示 10:1)
+- **兑换步长**：整数输入 (如 10，表示必须10的倍数起兑)
+- **起兑门槛**：整数输入
+- **单日限额**：整数输入
+- **状态**：Radio (启用/禁用)
 
-## 3. 功能需求详情 (Requirements)
+## 3. 接口设计 (API)
 
-### 3.1 规则管理模型 (Rule Model)
-支持双向兑换配置，即 `A->B` 和 `B->A` 为两条独立规则。
+### 3.1 查询规则列表 `GET /api/v1/admin/rules`
+- Query Params: `page`, `page_size`, `source_asset`, `status`
+- Response: `{ total: 100, items: [...] }`
 
-| 字段 Key | 字段名 | 类型 | 必填 | 说明/示例 |
-| :--- | :--- | :--- | :--- | :--- |
-| `rule_id` | 规则ID | String | Y | 全局唯一标识 |
-| `source_asset` | 源资产 | Enum | Y | 枚举值：`MALL_POINT`, `GAME_COIN` |
-| `target_asset` | 目标资产 | Enum | Y | 枚举值：`VIP_GROWTH`, `COUPON` |
-| `exchange_rate` | 汇率 | Decimal | Y | **1单位源资产 = N单位目标资产**。<br>例：A换B是10:1，则rate=0.1 |
-| `step_size` | 兑换步长 | Int | Y | **精度控制核心**。<br>源资产必须是此值的整数倍。<br>例：10:1场景，步长设为10。 |
-| `min_amount` | 起兑门槛 | Int | N | 至少100积分起兑 |
-| `daily_limit` | 单日限额 | Int | N | 用户单日最多获得多少目标积分 |
-| `total_pool` | 总资金池 | Int | N | 活动总预算，换完即止 |
-| `status` | 状态 | Enum | Y | ENABLE(生效), DISABLE(失效), DRAFT(草稿) |
-| `start_time` | 生效时间 | Timestamp| Y | |
-| `end_time` | 失效时间 | Timestamp| Y | |
+### 3.2 创建规则 `POST /api/v1/admin/rules`
+- Body: `{ name, source_asset, target_asset, rate, step, ... }`
 
-### 3.2 核心接口设计 (API)
+### 3.3 更新规则 `PUT /api/v1/admin/rules/{id}`
+- Body: `{ name, rate, status, ... }`
 
-#### 3.2.1 查询规则列表 `POST /api/v1/rules/query`
-*   **输入**：
-    *   `source_asset` (可选): 筛选源积分类型
-    *   `user_id` (可选): 用于未来扩展人群包过滤
-*   **输出**：
-    *   `rules`: List
-        *   `rate_desc`: "10积分兑换1成长值" (后端拼装好文案，方便前端展示)
-        *   `exchange_rate`: 0.1
-        *   `step_size`: 10 (前端据此设置步进器)
+### 3.4 删除规则 `DELETE /api/v1/admin/rules/{id}`
 
-#### 3.2.2 核心试算 `POST /api/v1/rules/calculate`
-*   **输入**：
-    *   `rule_id`: 规则ID
-    *   `amount`: 用户输入的源积分数量 (如 15)
-    *   `direction`: `SOURCE_TO_TARGET` (默认)
-*   **逻辑 (精度解决方案)**：
-    1.  校验规则有效期、状态。
-    2.  校验 `amount >= min_amount`。
-    3.  **计算**：
-        *   `valid_input = floor(amount / step_size) * step_size`
-        *   *解释：15 / 10 = 1.5 -> 取整 1 -> 乘 10 = 10。即只有10积分有效。*
-        *   `target_amount = valid_input * exchange_rate`
-    4.  **风控校验**：检查 `target_amount` 是否超过单日限额或总奖池。
-*   **输出**：
-    *   `source_deduct_amount`: 10 (建议业务方扣除的值)
-    *   `target_grant_amount`: 1 (建议业务方发放的值)
-    *   `remain_amount`: 5 (告知用户未被消耗的部分)
-    *   `calc_token`: "token_xyz" (加密串，包含本次计算结果的签名，用于事后校验或日志关联)
-
-## 4. 接入实施规范 (Implementation Guidelines)
-*本部分作为开发文档提供给接入方*
-
-1.  **一致性保障 (Consistency)**：
-    *   业务方必须实现**正向交易**与**逆向回滚**。
-    *   场景：调用源积分扣减成功，但调用目标积分发放失败（超时/报错）。
-    *   **强制动作**：业务方系统必须捕获该异常，并自动调用源积分系统的“退款/加分”接口，将 `source_deduct_amount` 原路退回给用户。
-2.  **前端交互建议**：
-    *   输入框建议根据 `step_size` 设置步长。例如步长为10，用户点击“+”号直接增加10，避免输入15造成困惑。
-    *   文案提示：“本次兑换消耗 10 积分，获得 1 成长值。（您输入的 15 积分中，5 积分不足兑换门槛已保留）”
-
+## 4. 数据库设计 (SQLite)
+更新 `rules` 表结构，增加 `updated_by`, `updated_at`, `name` 等管理字段。

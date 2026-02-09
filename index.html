@@ -3,174 +3,253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>通用积分互兑平台 (MVP Demo)</title>
-    <!-- 使用更稳定的 CDN -->
+    <title>系统配置 - 积分互兑管理平台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
     <style>
         [v-cloak] { display: none; }
-        .error-banner {
-            background-color: #fee2e2;
-            border: 1px solid #ef4444;
-            color: #b91c1c;
-            padding: 1rem;
-            margin: 1rem;
-            border-radius: 0.5rem;
-            display: none; /* 默认隐藏，JS 报错时显示 */
-        }
+        /* 模拟 ElementUI/AntDesign 的一些基础样式 */
+        .btn { @apply px-4 py-1.5 rounded text-sm transition duration-200; }
+        .btn-primary { @apply bg-blue-500 text-white hover:bg-blue-600; }
+        .btn-default { @apply bg-white border border-gray-300 text-gray-700 hover:text-blue-500 hover:border-blue-500; }
+        .btn-text { @apply text-blue-500 hover:text-blue-700 cursor-pointer; }
+        .input { @apply border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500; }
+        .table-header { @apply bg-gray-50 text-gray-500 text-xs font-medium uppercase tracking-wider text-left px-6 py-3; }
+        .table-cell { @apply px-6 py-4 whitespace-nowrap text-sm text-gray-700 border-b border-gray-100; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <div id="global-error" class="error-banner">
-        <h3 class="font-bold">页面运行出错</h3>
-        <p id="error-message"></p>
-        <p class="text-sm mt-2 text-gray-600">如果是网络问题，请尝试刷新页面。如果是 GitHub Pages，请注意本页面目前运行在纯前端 Mock 模式。</p>
-    </div>
+<body class="bg-gray-100 h-screen flex overflow-hidden">
 
-    <div id="app" class="container mx-auto px-4 py-8 max-w-3xl" v-cloak>
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-gray-800">积分互兑规则中心</h1>
-            <p class="text-gray-500 mt-2">统一汇率配置 · 精准试算引擎 · 安全交易保障</p>
-            <div v-if="isMockMode" class="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded mt-2 border border-yellow-200">
-                ⚠️ 当前为纯前端演示模式 (API 未连接)
+    <!-- 左侧侧边栏 (Dark Sidebar) -->
+    <aside class="w-64 bg-[#001529] flex-shrink-0 flex flex-col text-white">
+        <div class="h-16 flex items-center justify-center text-xl font-bold border-b border-gray-700 bg-[#002140]">
+            积分商城管理
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-4">
+            <div class="px-4 py-2 text-gray-400 text-xs uppercase">业务管理</div>
+            <a href="#" class="flex items-center px-6 py-3 text-gray-300 hover:text-white hover:bg-[#1890ff]">
+                <span class="mr-3">📂</span> 租户管理
+            </a>
+            <a href="#" class="flex items-center px-6 py-3 text-gray-300 hover:text-white hover:bg-[#1890ff]">
+                <span class="mr-3">🎁</span> 商品管理
+            </a>
+            
+            <div class="px-4 py-2 mt-4 text-gray-400 text-xs uppercase">系统设置</div>
+            <div class="bg-[#1890ff] text-white flex items-center px-6 py-3 cursor-pointer">
+                <span class="mr-3">⚙️</span> 系统配置
+            </div>
+            <div class="pl-12 py-2 text-sm text-white bg-[#000c17]">
+                规则配置
+            </div>
+        </nav>
+    </aside>
+
+    <!-- 右侧内容区 -->
+    <main class="flex-1 flex flex-col overflow-hidden" id="app" v-cloak>
+        <!-- 顶部导航 (Header) -->
+        <header class="h-16 bg-white shadow-sm flex items-center px-6 justify-between">
+            <div class="text-gray-500 text-sm">
+                系统管理 <span class="mx-2">/</span> <span class="text-gray-800 font-medium">系统配置</span>
+            </div>
+            <div class="flex items-center">
+                <span class="text-sm text-gray-600 mr-4">欢迎回来，Admin</span>
+                <div class="h-8 w-8 bg-gray-200 rounded-full"></div>
             </div>
         </header>
 
-        <!-- Rule Selection -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-semibold mb-4 border-b pb-2">1. 选择兑换规则</h2>
-            <div v-if="loading" class="text-center text-gray-500 py-4">
-                <div class="animate-pulse flex justify-center items-center">
-                    <div class="h-2 w-2 bg-gray-400 rounded-full mx-1"></div>
-                    <div class="h-2 w-2 bg-gray-400 rounded-full mx-1"></div>
-                    <div class="h-2 w-2 bg-gray-400 rounded-full mx-1"></div>
-                </div>
-                <div class="mt-2">加载规则中...</div>
-            </div>
-            <div v-else-if="rules.length === 0" class="text-center text-gray-500 py-4">
-                暂无可用规则
-            </div>
-            <div v-else class="grid gap-4">
-                <div v-for="rule in rules" :key="rule.rule_id" 
-                     @click="selectRule(rule)"
-                     :class="['cursor-pointer border p-4 rounded-lg transition hover:shadow-md flex justify-between items-center', 
-                              selectedRule && selectedRule.rule_id === rule.rule_id ? 'border-blue-500 bg-blue-50' : 'border-gray-200']">
-                    <div>
-                        <div class="font-bold text-lg text-gray-800">{{ rule.description }}</div>
-                        <div class="text-sm text-gray-500 mt-1">
-                            <span class="bg-gray-100 px-2 py-1 rounded">ID: {{ rule.rule_id }}</span>
-                            <span class="ml-2">步长: {{ rule.step_size }}</span>
-                            <span class="ml-2">汇率: {{ rule.exchange_rate }}</span>
-                        </div>
+        <!-- 主要内容 (Main Content) -->
+        <div class="flex-1 overflow-auto p-6">
+            <div class="bg-white rounded shadow-sm p-6 min-h-full flex flex-col">
+                
+                <!-- 筛选栏 -->
+                <div class="flex flex-wrap gap-4 mb-6 border-b pb-6">
+                    <div class="flex items-center">
+                        <label class="text-sm text-gray-600 mr-2">业务类型:</label>
+                        <select v-model="filter.status" class="input w-40">
+                            <option value="">全部状态</option>
+                            <option value="ENABLE">启用</option>
+                            <option value="DISABLE">禁用</option>
+                        </select>
                     </div>
-                    <div class="text-blue-600 font-semibold" v-if="selectedRule && selectedRule.rule_id === rule.rule_id">已选择</div>
+                    <div class="flex items-center ml-auto gap-2">
+                        <button @click="fetchRules" class="btn btn-primary">查询</button>
+                        <button @click="resetFilter" class="btn btn-default">重置</button>
+                    </div>
                 </div>
+
+                <!-- 操作栏 -->
+                <div class="mb-4">
+                    <button @click="openModal('create')" class="btn btn-primary flex items-center">
+                        <span class="mr-1">+</span> 新增配置
+                    </button>
+                </div>
+
+                <!-- 表格 -->
+                <div class="flex-1 overflow-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="table-header">序号</th>
+                                <th class="table-header">规则ID</th>
+                                <th class="table-header">配置名称</th>
+                                <th class="table-header">源资产</th>
+                                <th class="table-header">目标资产</th>
+                                <th class="table-header">汇率</th>
+                                <th class="table-header">修改人</th>
+                                <th class="table-header">修改时间</th>
+                                <th class="table-header">状态</th>
+                                <th class="table-header text-right">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="(item, index) in rules" :key="item.rule_id" class="hover:bg-gray-50">
+                                <td class="table-cell">{{ index + 1 }}</td>
+                                <td class="table-cell font-mono text-xs text-gray-500">{{ item.rule_id }}</td>
+                                <td class="table-cell font-medium">{{ item.name }}</td>
+                                <td class="table-cell">
+                                    <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">{{ item.source_asset }}</span>
+                                </td>
+                                <td class="table-cell">
+                                    <span class="px-2 py-1 bg-green-50 text-green-700 rounded text-xs">{{ item.target_asset }}</span>
+                                </td>
+                                <td class="table-cell">{{ item.exchange_rate }}</td>
+                                <td class="table-cell text-gray-500">{{ item.updated_by }}</td>
+                                <td class="table-cell text-gray-400 text-xs">{{ item.updated_at }}</td>
+                                <td class="table-cell">
+                                    <span v-if="item.status === 'ENABLE'" class="flex items-center text-green-600 text-xs">
+                                        <span class="h-2 w-2 bg-green-500 rounded-full mr-2"></span>启用
+                                    </span>
+                                    <span v-else class="flex items-center text-gray-400 text-xs">
+                                        <span class="h-2 w-2 bg-gray-400 rounded-full mr-2"></span>禁用
+                                    </span>
+                                </td>
+                                <td class="table-cell text-right space-x-2">
+                                    <span @click="openModal('edit', item)" class="btn-text">修改配置</span>
+                                    <span @click="deleteRule(item.rule_id)" class="text-red-500 hover:text-red-700 cursor-pointer text-sm">删除</span>
+                                </td>
+                            </tr>
+                            <tr v-if="rules.length === 0">
+                                <td colspan="10" class="text-center py-10 text-gray-400">暂无数据</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                <div class="mt-4 flex justify-end items-center gap-2 text-sm text-gray-600">
+                    <span>共搜索到 {{ total }} 条数据</span>
+                    <button class="px-2 py-1 border rounded hover:bg-gray-50" :disabled="page <= 1" @click="page--"> < </button>
+                    <span class="px-2 py-1 border rounded bg-blue-50 text-blue-600 border-blue-200">{{ page }}</span>
+                    <button class="px-2 py-1 border rounded hover:bg-gray-50" :disabled="rules.length < pageSize" @click="page++"> > </button>
+                    <select v-model="pageSize" @change="fetchRules" class="border rounded px-2 py-1">
+                        <option :value="10">10 条/页</option>
+                        <option :value="20">20 条/页</option>
+                    </select>
+                </div>
+
             </div>
         </div>
 
-        <!-- Calculator -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6" v-if="selectedRule">
-            <h2 class="text-xl font-semibold mb-4 border-b pb-2">2. 兑换试算</h2>
-            
-            <div class="flex flex-col gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">输入持有 {{ selectedRule.source_asset }} 数量</label>
-                    <div class="flex gap-2">
-                        <input type="number" v-model.number="inputAmount" 
-                               class="flex-1 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                               :placeholder="'起兑数量: ' + selectedRule.min_amount">
-                        <button @click="calculate" 
-                                class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-                                :disabled="!isValidInput">
-                            试算
-                        </button>
-                    </div>
-                    <p class="text-sm text-gray-500 mt-2">
-                        *提示：系统将根据步长 {{ selectedRule.step_size }} 自动取整计算
-                    </p>
-                </div>
-
-                <!-- Result Display -->
-                <div v-if="result" class="bg-gray-50 rounded-lg p-4 border border-gray-200 mt-4">
-                    <h3 class="font-semibold text-gray-800 mb-2">试算结果 (Token: {{ result.calc_token ? result.calc_token.substring(0,8) + '...' : 'MOCK' }})</h3>
-                    <div class="grid grid-cols-3 gap-4 text-center">
-                        <div class="p-3 bg-white rounded shadow-sm">
-                            <div class="text-xs text-gray-500">实际扣除 ({{ selectedRule.source_asset }})</div>
-                            <div class="text-xl font-bold text-red-600">-{{ result.source_deduct_amount }}</div>
-                        </div>
-                        <div class="p-3 bg-white rounded shadow-sm">
-                            <div class="text-xs text-gray-500">预计获得 ({{ selectedRule.target_asset }})</div>
-                            <div class="text-xl font-bold text-green-600">+{{ result.target_grant_amount }}</div>
-                        </div>
-                        <div class="p-3 bg-white rounded shadow-sm">
-                            <div class="text-xs text-gray-500">未消耗保留 ({{ selectedRule.source_asset }})</div>
-                            <div class="text-xl font-bold text-gray-600">{{ result.remain_amount }}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-end">
-                        <button @click="simulateTransaction" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 shadow-lg transition">
-                            模拟确认交易
-                        </button>
-                    </div>
+        <!-- 弹窗 (Modal) -->
+        <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-xl w-[600px] max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center px-6 py-4 border-b">
+                    <h3 class="text-lg font-medium text-gray-800">{{ modalType === 'create' ? '新增配置' : '修改配置' }}</h3>
+                    <button @click="showModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
                 </div>
                 
-                <div v-if="error" class="bg-red-50 text-red-600 p-3 rounded mt-2">
-                    {{ error }}
+                <div class="p-6 space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">配置名称 <span class="text-red-500">*</span></label>
+                            <input v-model="form.name" type="text" class="input w-full" placeholder="例如：积分兑换游戏币">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">源资产 <span class="text-red-500">*</span></label>
+                            <select v-model="form.source_asset" class="input w-full">
+                                <option value="MALL_POINT">MALL_POINT (商城积分)</option>
+                                <option value="GAME_COIN">GAME_COIN (游戏币)</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">目标资产 <span class="text-red-500">*</span></label>
+                            <select v-model="form.target_asset" class="input w-full">
+                                <option value="VIP_GROWTH">VIP_GROWTH (成长值)</option>
+                                <option value="COUPON">COUPON (优惠券)</option>
+                                <option value="GAME_COIN">GAME_COIN (游戏币)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">汇率 (Rate) <span class="text-red-500">*</span></label>
+                            <input v-model.number="form.exchange_rate" type="number" step="0.01" class="input w-full" placeholder="0.1">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">步长 (Step) <span class="text-red-500">*</span></label>
+                            <input v-model.number="form.step_size" type="number" class="input w-full" placeholder="10">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">起兑门槛</label>
+                            <input v-model.number="form.min_amount" type="number" class="input w-full" placeholder="100">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">单日限额</label>
+                            <input v-model.number="form.daily_limit" type="number" class="input w-full" placeholder="1000">
+                        </div>
+
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">状态</label>
+                            <div class="flex gap-4 mt-2">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" v-model="form.status" value="ENABLE" class="mr-2"> 启用
+                                </label>
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" v-model="form.status" value="DISABLE" class="mr-2"> 禁用
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t">
+                    <button @click="showModal = false" class="btn btn-default">取消</button>
+                    <button @click="submitForm" class="btn btn-primary">提交</button>
                 </div>
             </div>
         </div>
-
-        <!-- Transaction Logs -->
-        <div class="bg-white rounded-lg shadow-md p-6" v-if="logs.length > 0">
-            <h2 class="text-xl font-semibold mb-4 border-b pb-2">3. 交易模拟日志</h2>
-            <div class="space-y-2 max-h-60 overflow-y-auto font-mono text-sm">
-                <div v-for="(log, index) in logs" :key="index" class="p-2 border-b last:border-0">
-                    <span class="text-gray-400">[{{ log.time }}]</span>
-                    <span :class="log.type === 'success' ? 'text-green-600' : 'text-blue-600'">{{ log.message }}</span>
-                </div>
-            </div>
-        </div>
-
-    </div>
+    </main>
 
     <script>
-        // 全局错误捕获，防止白屏
-        window.onerror = function(message, source, lineno, colno, error) {
-            const errorDiv = document.getElementById('global-error');
-            const errorMsg = document.getElementById('error-message');
-            if (errorDiv && errorMsg) {
-                errorDiv.style.display = 'block';
-                errorMsg.textContent = `${message} (Line: ${lineno})`;
-            }
-            console.error('Global Error:', error);
-        };
-
         const { createApp } = Vue
-
-        // Mock Data for Fallback
-        const MOCK_RULES = [
-            { "rule_id": "RULE_001", "source_asset": "MALL_POINT", "target_asset": "VIP_GROWTH", "exchange_rate": 0.1, "step_size": 10, "min_amount": 10, "daily_limit": 1000, "status": "ENABLE", "description": "10商城积分兑换1成长值 (Mock)" },
-            { "rule_id": "RULE_002", "source_asset": "GAME_COIN", "target_asset": "COUPON", "exchange_rate": 0.05, "step_size": 100, "min_amount": 100, "daily_limit": 5000, "status": "ENABLE", "description": "100游戏币兑换5元优惠券 (Mock)" },
-            { "rule_id": "RULE_003", "source_asset": "MALL_POINT", "target_asset": "GAME_COIN", "exchange_rate": 1.0, "step_size": 1, "min_amount": 1, "daily_limit": 10000, "status": "ENABLE", "description": "1商城积分兑换1游戏币 (Mock)" }
-        ];
 
         createApp({
             data() {
                 return {
                     rules: [],
-                    loading: true,
-                    selectedRule: null,
-                    inputAmount: null,
-                    result: null,
-                    error: null,
-                    logs: [],
-                    isMockMode: false
-                }
-            },
-            computed: {
-                isValidInput() {
-                    return this.inputAmount !== null && this.inputAmount > 0
+                    total: 0,
+                    page: 1,
+                    pageSize: 10,
+                    filter: { status: '' },
+                    
+                    showModal: false,
+                    modalType: 'create', // create | edit
+                    form: {
+                        rule_id: '',
+                        name: '',
+                        source_asset: 'MALL_POINT',
+                        target_asset: 'VIP_GROWTH',
+                        exchange_rate: 1,
+                        step_size: 1,
+                        min_amount: 0,
+                        daily_limit: 0,
+                        status: 'ENABLE'
+                    }
                 }
             },
             mounted() {
@@ -179,99 +258,71 @@
             methods: {
                 async fetchRules() {
                     try {
-                        const res = await fetch('/api/v1/rules/query')
-                        if (!res.ok) throw new Error("API failed")
-                        const data = await res.json()
-                        this.rules = data.rules
-                        this.loading = false
-                        this.isMockMode = false
-                    } catch (e) {
-                        console.warn("Backend API not reachable, switching to Mock mode.", e)
-                        this.rules = MOCK_RULES
-                        this.isMockMode = true
-                        this.loading = false
-                        this.addLog('info', '系统提示: 无法连接后端 API，已切换至前端 Mock 模式')
-                    }
-                },
-                selectRule(rule) {
-                    this.selectedRule = rule
-                    this.result = null
-                    this.error = null
-                    this.inputAmount = rule.min_amount // Default to min amount
-                },
-                async calculate() {
-                    this.error = null
-                    this.result = null
-                    
-                    if (this.isMockMode) {
-                        // Frontend calculation logic (Duplicate of backend logic for demo)
-                        this.mockCalculate()
-                        return
-                    }
-
-                    try {
-                        const res = await fetch('/api/v1/rules/calculate', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                rule_id: this.selectedRule.rule_id,
-                                amount: this.inputAmount
-                            })
+                        const params = new URLSearchParams({
+                            page: this.page,
+                            page_size: this.pageSize,
+                            status: this.filter.status || 'ALL'
                         })
+                        const res = await fetch(`/api/v1/admin/rules?${params}`)
                         const data = await res.json()
+                        this.rules = data.items
+                        this.total = data.total
+                    } catch (e) {
+                        alert("加载失败，请确保后端服务运行")
+                    }
+                },
+                resetFilter() {
+                    this.filter.status = ''
+                    this.page = 1
+                    this.fetchRules()
+                },
+                openModal(type, item) {
+                    this.modalType = type
+                    this.showModal = true
+                    if (type === 'create') {
+                        this.form = {
+                            name: '', source_asset: 'MALL_POINT', target_asset: 'VIP_GROWTH',
+                            exchange_rate: 1, step_size: 10, min_amount: 100, daily_limit: 1000, status: 'ENABLE'
+                        }
+                    } else {
+                        this.form = { ...item }
+                    }
+                },
+                async submitForm() {
+                    const url = this.modalType === 'create' 
+                        ? '/api/v1/admin/rules' 
+                        : `/api/v1/admin/rules/${this.form.rule_id}`
+                    
+                    const method = this.modalType === 'create' ? 'POST' : 'PUT'
+                    
+                    try {
+                        const res = await fetch(url, {
+                            method: method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.form)
+                        })
                         
                         if (res.ok) {
-                            this.result = data
-                            this.addLog('info', `试算完成: 输入 ${this.inputAmount}, 建议扣除 ${data.source_deduct_amount}`)
+                            this.showModal = false
+                            this.fetchRules()
+                            // alert("操作成功")
                         } else {
-                            this.error = data.error
+                            const err = await res.json()
+                            alert("错误: " + err.error)
                         }
                     } catch (e) {
-                        this.error = "请求失败，请检查网络"
-                        // Fallback to mock calc if API fails midway
-                        this.isMockMode = true
-                        this.mockCalculate()
+                        alert("请求失败")
                     }
                 },
-                mockCalculate() {
-                    // 模拟后端计算逻辑，确保 Mock 模式下也能演示
-                    const rule = this.selectedRule
-                    const amount = this.inputAmount
+                async deleteRule(id) {
+                    if (!confirm("确定要删除这条配置吗？")) return
                     
-                    if (amount < rule.min_amount) {
-                        this.error = `数量 ${amount} 低于最小起兑值 ${rule.min_amount}`
-                        return
+                    try {
+                        await fetch(`/api/v1/admin/rules/${id}`, { method: 'DELETE' })
+                        this.fetchRules()
+                    } catch (e) {
+                        alert("删除失败")
                     }
-
-                    const step_size = rule.step_size
-                    const exchange_rate = rule.exchange_rate
-                    
-                    const valid_input = Math.floor(amount / step_size) * step_size
-                    const target_amount = parseFloat((valid_input * exchange_rate).toFixed(2))
-                    const source_deduct_amount = valid_input
-                    const remain_amount = amount - valid_input
-                    
-                    this.result = {
-                        source_deduct_amount,
-                        target_grant_amount: target_amount,
-                        remain_amount,
-                        calc_token: "mock-token-" + Date.now()
-                    }
-                    this.addLog('info', `(Mock) 试算完成: 输入 ${amount}, 建议扣除 ${source_deduct_amount}`)
-                },
-                simulateTransaction() {
-                    if (!this.result) return
-                    
-                    this.addLog('success', `[交易执行] 用户确认兑换。`)
-                    this.addLog('success', `[Source系统] 扣除 ${this.selectedRule.source_asset}: ${this.result.source_deduct_amount} (成功)`)
-                    this.addLog('success', `[Target系统] 发放 ${this.selectedRule.target_asset}: ${this.result.target_grant_amount} (成功)`)
-                    this.addLog('success', `[系统] 交易完成，凭证 Token: ${this.result.calc_token}`)
-                    
-                    alert("模拟交易成功！查看下方日志详情。")
-                },
-                addLog(type, message) {
-                    const time = new Date().toLocaleTimeString()
-                    this.logs.unshift({ time, type, message })
                 }
             }
         }).mount('#app')
