@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通用积分互兑平台 (MVP Demo)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="app" class="container mx-auto px-4 py-8 max-w-3xl">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-800">积分互兑规则中心</h1>
+            <p class="text-gray-500 mt-2">统一汇率配置 · 精准试算引擎 · 安全交易保障</p>
+        </header>
+
+        <!-- Rule Selection -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4 border-b pb-2">1. 选择兑换规则</h2>
+            <div v-if="loading" class="text-center text-gray-500">加载规则中...</div>
+            <div v-else class="grid gap-4">
+                <div v-for="rule in rules" :key="rule.rule_id" 
+                     @click="selectRule(rule)"
+                     :class="['cursor-pointer border p-4 rounded-lg transition hover:shadow-md flex justify-between items-center', 
+                              selectedRule && selectedRule.rule_id === rule.rule_id ? 'border-blue-500 bg-blue-50' : 'border-gray-200']">
+                    <div>
+                        <div class="font-bold text-lg text-gray-800">{{ rule.description }}</div>
+                        <div class="text-sm text-gray-500 mt-1">
+                            <span class="bg-gray-100 px-2 py-1 rounded">ID: {{ rule.rule_id }}</span>
+                            <span class="ml-2">步长: {{ rule.step_size }}</span>
+                            <span class="ml-2">汇率: {{ rule.exchange_rate }}</span>
+                        </div>
+                    </div>
+                    <div class="text-blue-600 font-semibold" v-if="selectedRule && selectedRule.rule_id === rule.rule_id">已选择</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculator -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6" v-if="selectedRule">
+            <h2 class="text-xl font-semibold mb-4 border-b pb-2">2. 兑换试算</h2>
+            
+            <div class="flex flex-col gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">输入持有 {{ selectedRule.source_asset }} 数量</label>
+                    <div class="flex gap-2">
+                        <input type="number" v-model.number="inputAmount" 
+                               class="flex-1 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                               :placeholder="'起兑数量: ' + selectedRule.min_amount">
+                        <button @click="calculate" 
+                                class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+                                :disabled="!isValidInput">
+                            试算
+                        </button>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">
+                        *提示：系统将根据步长 {{ selectedRule.step_size }} 自动取整计算
+                    </p>
+                </div>
+
+                <!-- Result Display -->
+                <div v-if="result" class="bg-gray-50 rounded-lg p-4 border border-gray-200 mt-4">
+                    <h3 class="font-semibold text-gray-800 mb-2">试算结果 (Token: {{ result.calc_token.substring(0,8)... }})</h3>
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div class="p-3 bg-white rounded shadow-sm">
+                            <div class="text-xs text-gray-500">实际扣除 ({{ selectedRule.source_asset }})</div>
+                            <div class="text-xl font-bold text-red-600">-{{ result.source_deduct_amount }}</div>
+                        </div>
+                        <div class="p-3 bg-white rounded shadow-sm">
+                            <div class="text-xs text-gray-500">预计获得 ({{ selectedRule.target_asset }})</div>
+                            <div class="text-xl font-bold text-green-600">+{{ result.target_grant_amount }}</div>
+                        </div>
+                        <div class="p-3 bg-white rounded shadow-sm">
+                            <div class="text-xs text-gray-500">未消耗保留 ({{ selectedRule.source_asset }})</div>
+                            <div class="text-xl font-bold text-gray-600">{{ result.remain_amount }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-end">
+                        <button @click="simulateTransaction" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 shadow-lg transition">
+                            模拟确认交易
+                        </button>
+                    </div>
+                </div>
+                
+                <div v-if="error" class="bg-red-50 text-red-600 p-3 rounded mt-2">
+                    {{ error }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Logs -->
+        <div class="bg-white rounded-lg shadow-md p-6" v-if="logs.length > 0">
+            <h2 class="text-xl font-semibold mb-4 border-b pb-2">3. 交易模拟日志</h2>
+            <div class="space-y-2 max-h-60 overflow-y-auto font-mono text-sm">
+                <div v-for="(log, index) in logs" :key="index" class="p-2 border-b last:border-0">
+                    <span class="text-gray-400">[{{ log.time }}]</span>
+                    <span :class="log.type === 'success' ? 'text-green-600' : 'text-blue-600'">{{ log.message }}</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                return {
+                    rules: [],
+                    loading: true,
+                    selectedRule: null,
+                    inputAmount: null,
+                    result: null,
+                    error: null,
+                    logs: []
+                }
+            },
+            computed: {
+                isValidInput() {
+                    return this.inputAmount !== null && this.inputAmount > 0
+                }
+            },
+            mounted() {
+                this.fetchRules()
+            },
+            methods: {
+                async fetchRules() {
+                    try {
+                        const res = await fetch('/api/v1/rules/query')
+                        const data = await res.json()
+                        this.rules = data.rules
+                        this.loading = false
+                    } catch (e) {
+                        this.error = "无法连接到服务器，请确保 server.py 正在运行"
+                        this.loading = false
+                    }
+                },
+                selectRule(rule) {
+                    this.selectedRule = rule
+                    this.result = null
+                    this.error = null
+                    this.inputAmount = rule.min_amount // Default to min amount
+                },
+                async calculate() {
+                    this.error = null
+                    this.result = null
+                    
+                    try {
+                        const res = await fetch('/api/v1/rules/calculate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                rule_id: this.selectedRule.rule_id,
+                                amount: this.inputAmount
+                            })
+                        })
+                        const data = await res.json()
+                        
+                        if (res.ok) {
+                            this.result = data
+                            this.addLog('info', `试算完成: 输入 ${this.inputAmount}, 建议扣除 ${data.source_deduct_amount}`)
+                        } else {
+                            this.error = data.error
+                        }
+                    } catch (e) {
+                        this.error = "请求失败"
+                    }
+                },
+                simulateTransaction() {
+                    if (!this.result) return
+                    
+                    this.addLog('success', `[交易执行] 用户确认兑换。`)
+                    this.addLog('success', `[Source系统] 扣除 ${this.selectedRule.source_asset}: ${this.result.source_deduct_amount} (成功)`)
+                    this.addLog('success', `[Target系统] 发放 ${this.selectedRule.target_asset}: ${this.result.target_grant_amount} (成功)`)
+                    this.addLog('success', `[系统] 交易完成，凭证 Token: ${this.result.calc_token}`)
+                    
+                    alert("模拟交易成功！查看下方日志详情。")
+                },
+                addLog(type, message) {
+                    const time = new Date().toLocaleTimeString()
+                    this.logs.unshift({ time, type, message })
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>
