@@ -6,6 +6,7 @@ import math
 import uuid
 import time
 import datetime
+import random
 from urllib.parse import urlparse, parse_qs
 
 PORT = 8000
@@ -15,7 +16,7 @@ def init_db():
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     
-    # 1. Assets Table (New)
+    # 1. Assets Table
     c.execute('''CREATE TABLE IF NOT EXISTS assets (
                     asset_code TEXT PRIMARY KEY,
                     asset_name TEXT,
@@ -28,7 +29,7 @@ def init_db():
                     updated_at TEXT
                 )''')
 
-    # 2. Rules Table (Existing)
+    # 2. Rules Table
     c.execute('''CREATE TABLE IF NOT EXISTS rules (
                     rule_id TEXT PRIMARY KEY,
                     name TEXT,
@@ -47,25 +48,53 @@ def init_db():
     c.execute("SELECT count(*) FROM assets")
     if c.fetchone()[0] == 0:
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        assets = [
+        assets_data = [
             ("MALL_POINT", "商城积分", "http://mall-service.local", "/api/point/deduct", "/api/point/grant", "/api/point/balance", "sk_mall_123", "核心商城购物积分", now),
             ("GAME_COIN", "游戏币", "http://game-service.local", "/v1/coin/sub", "/v1/coin/add", "/v1/coin/get", "sk_game_456", "娱乐中心通用货币", now),
             ("VIP_GROWTH", "会员成长值", "http://member-service.local", "", "/api/growth/add", "/api/growth/get", "sk_vip_789", "用户等级成长值(只增不减)", now),
-            ("COUPON", "优惠券", "http://promo-service.local", "", "/api/coupon/issue", "", "sk_promo_000", "通用现金抵扣券", now)
+            ("COUPON_10", "10元优惠券", "http://promo-service.local", "", "/api/coupon/issue/10", "", "sk_promo_000", "通用现金抵扣券", now),
+            ("COUPON_50", "50元优惠券", "http://promo-service.local", "", "/api/coupon/issue/50", "", "sk_promo_000", "满300可用", now),
+            ("MILEAGE", "航空里程", "http://partner-airline.com", "/api/miles/use", "/api/miles/add", "/api/miles/check", "sk_air_999", "合作伙伴航空里程", now),
+            ("GOLD_BEAN", "金豆", "http://finance-service.local", "/api/gold/pay", "/api/gold/refund", "/api/gold/balance", "sk_fin_888", "理财频道金豆", now),
+            ("ENERGY", "绿色能量", "http://eco-service.local", "/api/energy/consume", "/api/energy/collect", "/api/energy/query", "sk_eco_777", "环保公益活动能量", now),
+            ("BADGE_NEW", "新人勋章", "http://badge-service.local", "", "/api/badge/grant/newbie", "", "sk_badge_666", "社区新人成就", now),
+            ("GIFT_CARD", "礼品卡余额", "http://card-service.local", "/api/card/debit", "/api/card/credit", "/api/card/balance", "sk_card_555", "预付礼品卡", now)
         ]
-        for a in assets:
+        for a in assets_data:
             c.execute("INSERT INTO assets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", a)
 
-    # Seed Rules if empty (Ensure they match asset codes)
+    # Seed Rules if empty
     c.execute("SELECT count(*) FROM rules")
     if c.fetchone()[0] == 0:
+        rules_data = []
+        users = ["admin", "wangfengxi1", "liulei3", "zhangsan", "lixiasi"]
+        
+        # Core Rules
+        rules_data.append(("R_001", "商城积分兑换成长值", "MALL_POINT", "VIP_GROWTH", 0.1, 10, 10, 1000, "ENABLE", "admin"))
+        rules_data.append(("R_002", "游戏币兑换优惠券(10元)", "GAME_COIN", "COUPON_10", 0.01, 100, 100, 50, "ENABLE", "wangfengxi1"))
+        rules_data.append(("R_003", "积分互转游戏币", "MALL_POINT", "GAME_COIN", 1.0, 1, 1, 10000, "DISABLE", "wangxiaodi7"))
+        
+        # Generated Mock Rules
+        for i in range(4, 25):
+            r_id = f"R_{i:03d}"
+            assets = ["MALL_POINT", "GAME_COIN", "MILEAGE", "GOLD_BEAN", "ENERGY"]
+            targets = ["VIP_GROWTH", "COUPON_10", "COUPON_50", "BADGE_NEW", "GIFT_CARD"]
+            
+            src = random.choice(assets)
+            tgt = random.choice(targets)
+            rate = round(random.uniform(0.01, 2.0), 2)
+            step = random.choice([1, 10, 100])
+            limit = random.choice([100, 500, 1000, 5000])
+            status = random.choice(["ENABLE", "ENABLE", "DISABLE"]) # Bias towards ENABLE
+            user = random.choice(users)
+            
+            name = f"{src} 兑换 {tgt} (活动{i})"
+            rules_data.append((r_id, name, src, tgt, rate, step, step, limit, status, user))
+
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        rules = [
-            ("R_001", "商城积分兑换成长值", "MALL_POINT", "VIP_GROWTH", 0.1, 10, 10, 1000, "ENABLE", "admin", now),
-            ("R_002", "游戏币兑换优惠券", "GAME_COIN", "COUPON", 0.05, 100, 100, 5000, "ENABLE", "wangfengxi1", now),
-        ]
-        for r in rules:
-            c.execute("INSERT INTO rules VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", r)
+        for r in rules_data:
+            # Unpack and add timestamp
+            c.execute("INSERT INTO rules VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (*r, now))
             
     conn.commit()
     conn.close()
