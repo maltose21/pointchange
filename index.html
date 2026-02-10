@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系统配置 - 积分互兑管理平台</title>
+    <title>积分互兑管理平台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
     <style>
@@ -17,19 +17,11 @@
         .input-error { @apply border-red-500 focus:border-red-500 focus:ring-red-500; }
         .table-header { @apply bg-gray-50 text-gray-500 text-xs font-medium uppercase tracking-wider text-left px-6 py-3; }
         .table-cell { @apply px-6 py-4 whitespace-nowrap text-sm text-gray-700 border-b border-gray-100; }
+        .nav-item { @apply flex items-center px-6 py-3 text-gray-300 hover:text-white hover:bg-[#1890ff] transition-colors cursor-pointer; }
+        .nav-item.active { @apply text-white bg-[#1890ff] border-r-4 border-blue-300; }
         
-        /* Toast Animation */
         .toast-enter-active, .toast-leave-active { transition: all 0.3s ease; }
         .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(-20px); }
-        
-        /* Toggle Switch */
-        .toggle-checkbox:checked {
-            right: 0;
-            border-color: #2563EB;
-        }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: #2563EB;
-        }
     </style>
 </head>
 <body class="bg-gray-100 h-screen flex overflow-hidden">
@@ -46,288 +38,290 @@
         </transition-group>
     </div>
 
-    <!-- Sidebar -->
-    <aside class="w-64 bg-[#001529] flex-shrink-0 flex flex-col text-white transition-all duration-300">
-        <div class="h-16 flex items-center justify-center text-xl font-bold border-b border-gray-700 bg-[#002140] shadow-md">
-            <span class="text-blue-400 mr-2">⚡</span> 积分中台
-        </div>
-        
-        <nav class="flex-1 overflow-y-auto py-4">
-            <div class="px-4 py-2 text-gray-500 text-xs uppercase font-semibold tracking-wider">业务管理</div>
-            <a href="#" class="flex items-center px-6 py-3 text-gray-300 hover:text-white hover:bg-[#1890ff] transition-colors group">
-                <span class="mr-3 opacity-70 group-hover:opacity-100">📂</span> 租户管理
-            </a>
-            <a href="#" class="flex items-center px-6 py-3 text-gray-300 hover:text-white hover:bg-[#1890ff] transition-colors group">
-                <span class="mr-3 opacity-70 group-hover:opacity-100">🎁</span> 商品管理
-            </a>
+    <div id="app" class="flex w-full h-full" v-cloak>
+        <!-- Sidebar -->
+        <aside class="w-64 bg-[#001529] flex-shrink-0 flex flex-col text-white transition-all duration-300">
+            <div class="h-16 flex items-center justify-center text-xl font-bold border-b border-gray-700 bg-[#002140] shadow-md">
+                <span class="text-blue-400 mr-2">⚡</span> 积分中台
+            </div>
             
-            <div class="px-4 py-2 mt-4 text-gray-500 text-xs uppercase font-semibold tracking-wider">系统设置</div>
-            <div class="bg-[#1890ff] text-white flex items-center px-6 py-3 cursor-pointer shadow-lg">
-                <span class="mr-3">⚙️</span> 系统配置
-            </div>
-            <div class="pl-12 py-2 text-sm text-white bg-[#000c17] border-l-4 border-[#1890ff]">
-                规则配置
-            </div>
-        </nav>
-        
-        <div class="p-4 border-t border-gray-700 text-xs text-gray-500 text-center">
-            v2.1.0 Build 20260210
-        </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col overflow-hidden" id="app" v-cloak>
-        <!-- Header -->
-        <header class="h-16 bg-white shadow-sm flex items-center px-6 justify-between z-10">
-            <div class="flex items-center text-sm">
-                <span class="text-gray-500">系统管理</span>
-                <span class="mx-2 text-gray-300">/</span>
-                <span class="text-gray-800 font-medium">系统配置</span>
-            </div>
-            <div class="flex items-center gap-4">
-                <button class="p-2 text-gray-400 hover:text-blue-600 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                </button>
-                <div class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded transition">
-                    <div class="h-8 w-8 bg-gradient-to-tr from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs">AD</div>
-                    <span class="text-sm text-gray-700 ml-2 font-medium">Admin</span>
-                </div>
-            </div>
-        </header>
-
-        <!-- Content Body -->
-        <div class="flex-1 overflow-auto p-6">
-            <div class="bg-white rounded-lg shadow-sm p-6 min-h-full flex flex-col border border-gray-100">
+            <nav class="flex-1 overflow-y-auto py-4">
+                <div class="px-4 py-2 text-gray-500 text-xs uppercase font-semibold tracking-wider">业务管理</div>
                 
-                <!-- Filter Bar -->
-                <div class="flex flex-wrap gap-4 mb-6 border-b border-gray-100 pb-6 items-end">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">状态筛选</label>
-                        <select v-model="filter.status" class="input w-40 bg-gray-50">
-                            <option value="">全部状态</option>
-                            <option value="ENABLE">启用</option>
-                            <option value="DISABLE">禁用</option>
-                        </select>
+                <div class="px-4 py-2 mt-4 text-gray-500 text-xs uppercase font-semibold tracking-wider">系统设置</div>
+                <div :class="['nav-item', currentTab === 'rules' ? 'active' : '']" @click="currentTab = 'rules'">
+                    <span class="mr-3">⚙️</span> 规则配置
+                </div>
+                <div :class="['nav-item', currentTab === 'assets' ? 'active' : '']" @click="currentTab = 'assets'">
+                    <span class="mr-3">💎</span> 资产管理
+                </div>
+            </nav>
+            
+            <div class="p-4 border-t border-gray-700 text-xs text-gray-500 text-center">
+                v2.2.0 Asset Enabled
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="h-16 bg-white shadow-sm flex items-center px-6 justify-between z-10">
+                <div class="flex items-center text-sm">
+                    <span class="text-gray-500">系统设置</span>
+                    <span class="mx-2 text-gray-300">/</span>
+                    <span class="text-gray-800 font-medium">{{ currentTab === 'rules' ? '规则配置' : '资产管理' }}</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded transition">
+                        <div class="h-8 w-8 bg-gradient-to-tr from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs">AD</div>
+                        <span class="text-sm text-gray-700 ml-2 font-medium">Admin</span>
                     </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">搜索规则</label>
-                        <input type="text" placeholder="输入规则ID或名称" class="input w-64 bg-gray-50">
+                </div>
+            </header>
+
+            <!-- RULES TAB CONTENT -->
+            <div v-if="currentTab === 'rules'" class="flex-1 overflow-auto p-6">
+                <div class="bg-white rounded-lg shadow-sm p-6 min-h-full flex flex-col border border-gray-100">
+                    <div class="flex flex-wrap gap-4 mb-6 border-b border-gray-100 pb-6 items-end">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">状态筛选</label>
+                            <select v-model="filter.status" class="input w-40 bg-gray-50">
+                                <option value="">全部状态</option>
+                                <option value="ENABLE">启用</option>
+                                <option value="DISABLE">禁用</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center ml-auto gap-2">
+                            <button @click="fetchRules" class="btn btn-primary shadow-sm">查询</button>
+                            <button @click="resetFilter" class="btn btn-default shadow-sm">重置</button>
+                        </div>
                     </div>
-                    <div class="flex items-center ml-auto gap-2">
-                        <button @click="fetchRules" class="btn btn-primary shadow-sm">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                            查询
+
+                    <div class="mb-4 flex justify-between items-center">
+                        <button @click="openRuleModal('create')" class="btn btn-primary shadow-md">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            新增规则
                         </button>
-                        <button @click="resetFilter" class="btn btn-default shadow-sm">重置</button>
                     </div>
-                </div>
 
-                <!-- Action Bar -->
-                <div class="mb-4 flex justify-between items-center">
-                    <button @click="openModal('create')" class="btn btn-primary shadow-md transform hover:-translate-y-0.5 transition-all">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        新增配置
-                    </button>
-                    <div class="text-xs text-gray-400">
-                        数据更新时间: {{ lastUpdated }}
-                    </div>
-                </div>
-
-                <!-- Data Table -->
-                <div class="flex-1 overflow-hidden rounded-lg border border-gray-200">
-                    <div class="overflow-y-auto h-full">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50 sticky top-0 z-10">
-                                <tr>
-                                    <th class="table-header w-16">序号</th>
-                                    <th class="table-header">规则信息</th>
-                                    <th class="table-header">资产流向 (Source -> Target)</th>
-                                    <th class="table-header">汇率参数</th>
-                                    <th class="table-header">修订记录</th>
-                                    <th class="table-header text-center">状态</th>
-                                    <th class="table-header text-right">操作</th>
-                                </tbody>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="(item, index) in rules" :key="item.rule_id" class="hover:bg-blue-50 transition-colors group">
-                                    <td class="table-cell text-gray-400">{{ index + 1 }}</td>
-                                    <td class="table-cell">
-                                        <div class="font-medium text-gray-900">{{ item.name }}</div>
-                                        <div class="text-xs text-gray-400 font-mono mt-0.5">ID: {{ item.rule_id }}</div>
-                                    </td>
-                                    <td class="table-cell">
-                                        <div class="flex items-center gap-2">
-                                            <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium border border-blue-200">{{ item.source_asset }}</span>
-                                            <span class="text-gray-400">→</span>
-                                            <span class="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium border border-purple-200">{{ item.target_asset }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="table-cell">
-                                        <div class="text-sm">
-                                            <span class="text-gray-500">汇率:</span> <span class="font-bold text-gray-800">{{ item.exchange_rate }}</span>
-                                        </div>
-                                        <div class="text-xs text-gray-500 mt-1">
-                                            步长: {{ item.step_size }} | 门槛: {{ item.min_amount }}
-                                        </div>
-                                    </td>
-                                    <td class="table-cell">
-                                        <div class="flex items-center gap-1.5">
-                                            <div class="h-5 w-5 rounded-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-600 font-bold">
-                                                {{ item.updated_by ? item.updated_by.charAt(0).toUpperCase() : '?' }}
+                    <div class="flex-1 overflow-hidden rounded-lg border border-gray-200">
+                        <div class="overflow-y-auto h-full">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="table-header w-16">序号</th>
+                                        <th class="table-header">规则信息</th>
+                                        <th class="table-header">资产流向</th>
+                                        <th class="table-header">汇率参数</th>
+                                        <th class="table-header text-center">状态</th>
+                                        <th class="table-header text-right">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="(item, index) in rules" :key="item.rule_id" class="hover:bg-blue-50 transition-colors">
+                                        <td class="table-cell text-gray-400">{{ index + 1 }}</td>
+                                        <td class="table-cell">
+                                            <div class="font-medium text-gray-900">{{ item.name }}</div>
+                                            <div class="text-xs text-gray-400 font-mono mt-0.5">{{ item.rule_id }}</div>
+                                        </td>
+                                        <td class="table-cell">
+                                            <div class="flex items-center gap-2">
+                                                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">{{ item.source_asset }}</span>
+                                                <span class="text-gray-400">→</span>
+                                                <span class="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">{{ item.target_asset }}</span>
                                             </div>
-                                            <span class="text-xs text-gray-600">{{ item.updated_by }}</span>
-                                        </div>
-                                        <div class="text-xs text-gray-400 mt-0.5 scale-90 origin-left">{{ item.updated_at }}</div>
-                                    </td>
-                                    <td class="table-cell text-center">
-                                        <span v-if="item.status === 'ENABLE'" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                            启用
-                                        </span>
-                                        <span v-else class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                                            禁用
-                                        </span>
-                                    </td>
-                                    <td class="table-cell text-right text-sm font-medium">
-                                        <a href="#" @click.prevent="openModal('edit', item)" class="text-blue-600 hover:text-blue-900 mr-4">修改配置</a>
-                                        <a href="#" @click.prevent="toggleStatus(item)" class="text-blue-600 hover:text-blue-900">{{ item.status === 'ENABLE' ? '禁用' : '启用' }}</a>
-                                    </td>
-                                </tr>
-                                <tr v-if="rules.length === 0">
-                                    <td colspan="7" class="text-center py-20">
-                                        <div class="flex flex-col items-center justify-center text-gray-400">
-                                            <div class="text-4xl mb-2">📭</div>
-                                            <p>暂无配置数据</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Pagination -->
-                <div class="mt-4 flex justify-between items-center text-sm text-gray-600 border-t pt-4">
-                    <div>
-                        显示第 <span class="font-medium">{{ (page - 1) * pageSize + 1 }}</span> 到 <span class="font-medium">{{ Math.min(page * pageSize, total) }}</span> 条，共 <span class="font-medium">{{ total }}</span> 条
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <select v-model="pageSize" @change="fetchRules" class="border rounded px-2 py-1 bg-white focus:ring-1 focus:ring-blue-500 outline-none">
-                            <option :value="10">10 条/页</option>
-                            <option :value="20">20 条/页</option>
-                            <option :value="50">50 条/页</option>
-                        </select>
-                        <div class="flex gap-1">
-                            <button class="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50" :disabled="page <= 1" @click="page--">上一页</button>
-                            <span class="px-3 py-1 border rounded bg-blue-50 text-blue-600 border-blue-200 font-medium">{{ page }}</span>
-                            <button class="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50" :disabled="rules.length < pageSize" @click="page++">下一页</button>
+                                        </td>
+                                        <td class="table-cell">
+                                            <div class="text-sm"><span class="text-gray-500">汇率:</span> <b>{{ item.exchange_rate }}</b></div>
+                                            <div class="text-xs text-gray-500">步长: {{ item.step_size }} | 门槛: {{ item.min_amount }}</div>
+                                        </td>
+                                        <td class="table-cell text-center">
+                                            <span v-if="item.status === 'ENABLE'" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">启用</span>
+                                            <span v-else class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">禁用</span>
+                                        </td>
+                                        <td class="table-cell text-right text-sm font-medium">
+                                            <a href="#" @click.prevent="openRuleModal('edit', item)" class="text-blue-600 hover:text-blue-900 mr-4">修改</a>
+                                            <a href="#" @click.prevent="toggleRuleStatus(item)" class="text-blue-600 hover:text-blue-900">{{ item.status === 'ENABLE' ? '禁用' : '启用' }}</a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
-
             </div>
-        </div>
 
-        <!-- Modal -->
-        <transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100" leave-active-class="transition duration-150 ease-in" leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
-        <div v-if="showModal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <!-- ASSETS TAB CONTENT -->
+            <div v-if="currentTab === 'assets'" class="flex-1 overflow-auto p-6">
+                <div class="bg-white rounded-lg shadow-sm p-6 min-h-full flex flex-col border border-gray-100">
+                    <div class="mb-4 flex justify-between items-center">
+                        <button @click="openAssetModal('create')" class="btn btn-primary shadow-md">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            录入新资产
+                        </button>
+                    </div>
+
+                    <div class="flex-1 overflow-hidden rounded-lg border border-gray-200">
+                        <div class="overflow-y-auto h-full">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="table-header">资产代码</th>
+                                        <th class="table-header">资产名称</th>
+                                        <th class="table-header">服务地址 (Service URL)</th>
+                                        <th class="table-header">接口配置 (Deduct / Grant)</th>
+                                        <th class="table-header">更新时间</th>
+                                        <th class="table-header text-right">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr v-for="item in assets" :key="item.asset_code" class="hover:bg-yellow-50 transition-colors">
+                                        <td class="table-cell font-mono font-medium text-blue-600">{{ item.asset_code }}</td>
+                                        <td class="table-cell font-bold text-gray-800">{{ item.asset_name }}</td>
+                                        <td class="table-cell text-gray-500 text-xs font-mono">{{ item.service_url }}</td>
+                                        <td class="table-cell">
+                                            <div class="flex flex-col gap-1">
+                                                <div class="flex items-center text-xs">
+                                                    <span class="w-12 text-red-500 font-mono">[-]</span> 
+                                                    <span class="bg-gray-100 px-1 rounded text-gray-600">{{ item.deduct_api || '未配置' }}</span>
+                                                </div>
+                                                <div class="flex items-center text-xs">
+                                                    <span class="w-12 text-green-500 font-mono">[+]</span> 
+                                                    <span class="bg-gray-100 px-1 rounded text-gray-600">{{ item.grant_api || '未配置' }}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="table-cell text-xs text-gray-400">{{ item.updated_at }}</td>
+                                        <td class="table-cell text-right text-sm font-medium">
+                                            <a href="#" @click.prevent="openAssetModal('edit', item)" class="text-blue-600 hover:text-blue-900 mr-4">配置</a>
+                                            <a href="#" @click.prevent="deleteAsset(item.asset_code)" class="text-red-500 hover:text-red-700">删除</a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- RULE MODAL -->
+        <div v-if="showRuleModal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showModal = false" aria-hidden="true"></div>
-                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showRuleModal = false"></div>
                 <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                     <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="flex justify-between items-center mb-5 pb-2 border-b">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                {{ modalType === 'create' ? '✨ 新增兑换规则' : '📝 修改兑换规则' }}
-                            </h3>
-                            <button @click="showModal = false" class="text-gray-400 hover:text-gray-500">
-                                <span class="text-2xl">&times;</span>
-                            </button>
-                        </div>
-                        
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">{{ ruleModalType === 'create' ? '新增规则' : '修改规则' }}</h3>
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">配置名称 <span class="text-red-500">*</span></label>
-                                <input v-model="form.name" type="text" :class="['input', {'input-error': errors.name}]" placeholder="例如：积分兑换游戏币">
-                                <p v-if="errors.name" class="text-red-500 text-xs mt-1">{{ errors.name }}</p>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">规则名称</label>
+                                <input v-model="ruleForm.name" type="text" class="input">
                             </div>
-                            
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">源资产 <span class="text-red-500">*</span></label>
-                                    <select v-model="form.source_asset" class="input bg-white">
-                                        <option value="MALL_POINT">商城积分</option>
-                                        <option value="GAME_COIN">游戏币</option>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">源资产</label>
+                                    <select v-model="ruleForm.source_asset" class="input bg-white">
+                                        <option v-for="a in assets" :key="a.asset_code" :value="a.asset_code">{{ a.asset_name }} ({{ a.asset_code }})</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">目标资产 <span class="text-red-500">*</span></label>
-                                    <select v-model="form.target_asset" class="input bg-white">
-                                        <option value="VIP_GROWTH">成长值</option>
-                                        <option value="COUPON">优惠券</option>
-                                        <option value="GAME_COIN">游戏币</option>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">目标资产</label>
+                                    <select v-model="ruleForm.target_asset" class="input bg-white">
+                                        <option v-for="a in assets" :key="a.asset_code" :value="a.asset_code">{{ a.asset_name }} ({{ a.asset_code }})</option>
                                     </select>
                                 </div>
                             </div>
-
-                            <div class="p-3 bg-blue-50 rounded border border-blue-100 text-sm text-blue-800 flex items-start">
-                                <span class="mr-2">💡</span>
-                                <div>
-                                    当前汇率设置表示：<br/>
-                                    <span class="font-bold">1 {{ form.source_asset }} = {{ form.exchange_rate }} {{ form.target_asset }}</span>
-                                </div>
-                            </div>
-
+                            <!-- ... Other fields same as before ... -->
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">汇率 (Rate) <span class="text-red-500">*</span></label>
-                                    <input v-model.number="form.exchange_rate" type="number" step="0.01" class="input" placeholder="0.1">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">汇率</label>
+                                    <input v-model.number="ruleForm.exchange_rate" type="number" step="0.01" class="input">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">步长 (Step) <span class="text-red-500">*</span></label>
-                                    <input v-model.number="form.step_size" type="number" class="input" placeholder="10">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">步长</label>
+                                    <input v-model.number="ruleForm.step_size" type="number" class="input">
                                 </div>
                             </div>
-                            
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">起兑门槛</label>
-                                    <input v-model.number="form.min_amount" type="number" class="input" placeholder="100">
+                                    <input v-model.number="ruleForm.min_amount" type="number" class="input">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">单日限额</label>
-                                    <input v-model.number="form.daily_limit" type="number" class="input" placeholder="1000">
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">初始状态</label>
-                                <div class="flex gap-4 mt-2">
-                                    <label class="flex items-center cursor-pointer p-2 border rounded hover:bg-gray-50 transition w-full">
-                                        <input type="radio" v-model="form.status" value="ENABLE" class="mr-2 text-blue-600 focus:ring-blue-500"> 
-                                        <span class="text-sm">立即启用</span>
-                                    </label>
-                                    <label class="flex items-center cursor-pointer p-2 border rounded hover:bg-gray-50 transition w-full">
-                                        <input type="radio" v-model="form.status" value="DISABLE" class="mr-2 text-gray-600 focus:ring-gray-500"> 
-                                        <span class="text-sm text-gray-500">暂存草稿</span>
-                                    </label>
+                                    <input v-model.number="ruleForm.daily_limit" type="number" class="input">
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
-                        <button type="button" @click="submitForm" :disabled="submitting" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
-                            {{ submitting ? '提交中...' : '确认提交' }}
-                        </button>
-                        <button type="button" @click="showModal = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                            取消
-                        </button>
+                        <button @click="submitRuleForm" class="btn btn-primary w-full sm:w-auto">提交</button>
+                        <button @click="showRuleModal = false" class="btn btn-default w-full sm:w-auto mt-3 sm:mt-0">取消</button>
                     </div>
                 </div>
             </div>
         </div>
-        </transition>
 
-    </main>
+        <!-- ASSET MODAL -->
+        <div v-if="showAssetModal" class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showAssetModal = false"></div>
+                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">{{ assetModalType === 'create' ? '录入新资产' : '配置资产接口' }}</h3>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">资产代码 (Code)</label>
+                                    <input v-model="assetForm.asset_code" type="text" class="input uppercase" :disabled="assetModalType === 'edit'" placeholder="如: MALL_POINT">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">资产名称</label>
+                                    <input v-model="assetForm.asset_name" type="text" class="input" placeholder="如: 商城积分">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">服务根地址 (Host)</label>
+                                <input v-model="assetForm.service_url" type="text" class="input" placeholder="http://xxx.internal">
+                            </div>
+
+                            <div class="p-3 bg-yellow-50 text-yellow-800 text-xs rounded border border-yellow-200">
+                                ⚠️ 请确保接口路径正确，系统将通过 <b>Host + Path</b> 拼接调用。
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">扣减接口 (Deduct API)</label>
+                                    <input v-model="assetForm.deduct_api" type="text" class="input" placeholder="/api/deduct">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">发放接口 (Grant API)</label>
+                                    <input v-model="assetForm.grant_api" type="text" class="input" placeholder="/api/grant">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">查询余额接口</label>
+                                <input v-model="assetForm.query_api" type="text" class="input" placeholder="/api/balance">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">鉴权 Token (Auth)</label>
+                                <input v-model="assetForm.auth_token" type="password" class="input" placeholder="sk_live_...">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+                        <button @click="submitAssetForm" class="btn btn-primary w-full sm:w-auto">保存配置</button>
+                        <button @click="showAssetModal = false" class="btn btn-default w-full sm:w-auto mt-3 sm:mt-0">取消</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
 
     <script>
         const { createApp } = Vue
@@ -335,142 +329,131 @@
         createApp({
             data() {
                 return {
+                    currentTab: 'rules', // rules | assets
                     rules: [],
-                    total: 0,
-                    page: 1,
-                    pageSize: 10,
-                    filter: { status: '' },
-                    lastUpdated: '-',
-                    
-                    showModal: false,
-                    modalType: 'create',
-                    submitting: false,
+                    assets: [],
                     toasts: [],
                     
-                    form: {
-                        rule_id: '', name: '', source_asset: 'MALL_POINT', target_asset: 'VIP_GROWTH',
-                        exchange_rate: 1, step_size: 1, min_amount: 0, daily_limit: 0, status: 'ENABLE'
-                    },
-                    errors: {}
+                    // Filter
+                    filter: { status: '' },
+                    page: 1, pageSize: 10, total: 0,
+                    
+                    // Rule Modal
+                    showRuleModal: false,
+                    ruleModalType: 'create',
+                    ruleForm: {},
+                    
+                    // Asset Modal
+                    showAssetModal: false,
+                    assetModalType: 'create',
+                    assetForm: {}
                 }
             },
             mounted() {
                 this.fetchRules()
-                // Auto refresh every 30s
-                setInterval(this.fetchRules, 30000)
+                this.fetchAssets()
             },
             methods: {
                 showToast(message, type = 'success') {
                     const id = Date.now()
                     this.toasts.push({ id, message, type })
-                    setTimeout(() => {
-                        this.toasts = this.toasts.filter(t => t.id !== id)
-                    }, 3000)
+                    setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id) }, 3000)
                 },
+                
+                // --- Data Fetching ---
                 async fetchRules() {
-                    try {
-                        const params = new URLSearchParams({
-                            page: this.page,
-                            page_size: this.pageSize,
-                            status: this.filter.status || 'ALL'
-                        })
-                        const res = await fetch(`/api/v1/admin/rules?${params}`)
-                        const data = await res.json()
-                        this.rules = data.items
-                        this.total = data.total
-                        this.lastUpdated = new Date().toLocaleTimeString()
-                    } catch (e) {
-                        this.showToast("数据加载失败", 'error')
-                    }
+                    const params = new URLSearchParams({ page: this.page, page_size: this.pageSize, status: this.filter.status || 'ALL' })
+                    const res = await fetch(`/api/v1/admin/rules?${params}`)
+                    const data = await res.json()
+                    this.rules = data.items
+                    this.total = data.total
+                },
+                async fetchAssets() {
+                    const res = await fetch(`/api/v1/admin/assets`)
+                    const data = await res.json()
+                    this.assets = data.items
                 },
                 resetFilter() {
                     this.filter.status = ''
-                    this.page = 1
                     this.fetchRules()
-                    this.showToast("筛选已重置")
                 },
-                async toggleStatus(item) {
-                    const newStatus = item.status === 'ENABLE' ? 'DISABLE' : 'ENABLE'
-                    // Optimistic UI update
-                    const oldStatus = item.status
-                    item.status = newStatus
-                    
-                    try {
-                        const res = await fetch(`/api/v1/admin/rules/${item.rule_id}`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(item) // Send full item with new status
-                        })
-                        
-                        if (res.ok) {
-                            this.showToast(newStatus === 'ENABLE' ? "规则已启用" : "规则已禁用")
-                        } else {
-                            throw new Error()
-                        }
-                    } catch (e) {
-                        item.status = oldStatus // Revert
-                        this.showToast("状态修改失败", 'error')
-                    }
-                },
-                openModal(type, item) {
-                    this.modalType = type
-                    this.showModal = true
-                    this.errors = {}
+
+                // --- Rule Actions ---
+                openRuleModal(type, item) {
+                    this.ruleModalType = type
+                    this.showRuleModal = true
                     if (type === 'create') {
-                        this.form = {
-                            name: '', source_asset: 'MALL_POINT', target_asset: 'VIP_GROWTH',
-                            exchange_rate: 1, step_size: 10, min_amount: 100, daily_limit: 1000, status: 'ENABLE'
+                        // Default first asset if available
+                        const defaultAsset = this.assets.length > 0 ? this.assets[0].asset_code : ''
+                        this.ruleForm = { 
+                            name: '', source_asset: defaultAsset, target_asset: defaultAsset, 
+                            exchange_rate: 1, step_size: 10, min_amount: 100, daily_limit: 1000, status: 'ENABLE' 
                         }
                     } else {
-                        this.form = { ...item }
+                        this.ruleForm = { ...item }
                     }
                 },
-                validateForm() {
-                    this.errors = {}
-                    if (!this.form.name) this.errors.name = "请输入配置名称"
-                    if (this.form.exchange_rate <= 0) this.showToast("汇率必须大于0", 'error')
-                    return Object.keys(this.errors).length === 0
-                },
-                async submitForm() {
-                    if (!this.validateForm()) return
+                async submitRuleForm() {
+                    const url = this.ruleModalType === 'create' ? '/api/v1/admin/rules' : `/api/v1/admin/rules/${this.ruleForm.rule_id}`
+                    const method = this.ruleModalType === 'create' ? 'POST' : 'PUT'
                     
-                    this.submitting = true
-                    const url = this.modalType === 'create' 
-                        ? '/api/v1/admin/rules' 
-                        : `/api/v1/admin/rules/${this.form.rule_id}`
-                    
-                    const method = this.modalType === 'create' ? 'POST' : 'PUT'
-                    
-                    try {
-                        const res = await fetch(url, {
-                            method: method,
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(this.form)
-                        })
-                        
-                        if (res.ok) {
-                            this.showModal = false
-                            this.fetchRules()
-                            this.showToast(this.modalType === 'create' ? "新增成功" : "修改成功")
-                        } else {
-                            const err = await res.json()
-                            this.showToast(err.error || "操作失败", 'error')
-                        }
-                    } catch (e) {
-                        this.showToast("网络请求失败", 'error')
-                    } finally {
-                        this.submitting = false
-                    }
-                },
-                async deleteRule(id) {
-                    if (!confirm("⚠️ 确定要删除这条配置吗？删除后不可恢复。")) return
-                    
-                    try {
-                        await fetch(`/api/v1/admin/rules/${id}`, { method: 'DELETE' })
-                        this.showToast("删除成功")
+                    const res = await fetch(url, {
+                        method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.ruleForm)
+                    })
+                    if (res.ok) {
+                        this.showRuleModal = false
                         this.fetchRules()
-                    } catch (e) {
-                        this.showToast("删除失败", 'error')
+                        this.showToast("规则保存成功")
+                    } else {
+                        this.showToast("保存失败", "error")
+                    }
+                },
+                async toggleRuleStatus(item) {
+                    item.status = item.status === 'ENABLE' ? 'DISABLE' : 'ENABLE'
+                    await fetch(`/api/v1/admin/rules/${item.rule_id}`, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item)
+                    })
+                    this.showToast("状态更新成功")
+                },
+
+                // --- Asset Actions ---
+                openAssetModal(type, item) {
+                    this.assetModalType = type
+                    this.showAssetModal = true
+                    if (type === 'create') {
+                        this.assetForm = { asset_code: '', asset_name: '', service_url: '', deduct_api: '', grant_api: '', query_api: '', auth_token: '' }
+                    } else {
+                        this.assetForm = { ...item }
+                    }
+                },
+                async submitAssetForm() {
+                    if (!this.assetForm.asset_code) return this.showToast("资产代码不能为空", "error")
+                    
+                    const url = this.assetModalType === 'create' ? '/api/v1/admin/assets' : `/api/v1/admin/assets/${this.assetForm.asset_code}`
+                    const method = this.assetModalType === 'create' ? 'POST' : 'PUT'
+                    
+                    const res = await fetch(url, {
+                        method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.assetForm)
+                    })
+                    
+                    if (res.ok) {
+                        this.showAssetModal = false
+                        this.fetchAssets()
+                        this.showToast("资产配置保存成功")
+                    } else {
+                        const err = await res.json()
+                        this.showToast(err.error || "保存失败", "error")
+                    }
+                },
+                async deleteAsset(code) {
+                    if (!confirm("确定删除该资产？如果已被规则引用将无法删除。")) return
+                    const res = await fetch(`/api/v1/admin/assets/${code}`, { method: 'DELETE' })
+                    if (res.ok) {
+                        this.fetchAssets()
+                        this.showToast("删除成功")
+                    } else {
+                        const err = await res.json()
+                        this.showToast(err.error, "error")
                     }
                 }
             }
