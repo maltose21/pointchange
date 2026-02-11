@@ -359,6 +359,11 @@
                     this.toasts.push({ id, message, type })
                     setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id) }, 3000)
                 },
+                getToastClass(type) {
+                    const base = 'pointer-events-auto shadow-lg rounded-lg px-4 py-3 text-sm font-medium flex items-center min-w-[300px]';
+                    const color = type === 'success' ? 'bg-white border-l-4 border-green-500 text-gray-800' : 'bg-white border-l-4 border-red-500 text-gray-800';
+                    return `${base} ${color}`;
+                },
                 
                 // --- Data Fetching ---
                 async fetchRules() {
