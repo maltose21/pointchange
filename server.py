@@ -26,6 +26,7 @@ def init_db():
                     query_api TEXT,
                     auth_token TEXT,
                     description TEXT,
+                    created_at TEXT,
                     updated_at TEXT
                 )''')
 
@@ -41,6 +42,7 @@ def init_db():
                     daily_limit INTEGER,
                     status TEXT,
                     updated_by TEXT,
+                    created_at TEXT,
                     updated_at TEXT
                 )''')
     
@@ -94,7 +96,7 @@ def init_db():
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         for r in rules_data:
             # Unpack and add timestamp
-            c.execute("INSERT INTO rules VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (*r, now))
+            c.execute("INSERT INTO rules VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (*r, now, now))
             
     conn.commit()
     conn.close()
@@ -284,11 +286,11 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
         try:
-            c.execute("""INSERT INTO rules (rule_id, name, source_asset, target_asset, exchange_rate, step_size, min_amount, daily_limit, status, updated_by, updated_at)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            c.execute("""INSERT INTO rules (rule_id, name, source_asset, target_asset, exchange_rate, step_size, min_amount, daily_limit, status, updated_by, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                       (rule_id, data['name'], data['source_asset'], data['target_asset'], 
                        float(data['exchange_rate']), int(data['step_size']), int(data['min_amount']), 
-                       int(data['daily_limit']), data['status'], "admin", now))
+                       int(data['daily_limit']), data['status'], "admin", now, now))
             conn.commit()
             self._set_headers(201)
             self.wfile.write(json.dumps({"message": "Created", "rule_id": rule_id}).encode())
